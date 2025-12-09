@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>6. 이사야 60장 1절 암송</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root { --card-height: 26rem; }
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: "Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+            background: radial-gradient(circle at top,#1e293b 0,#020617 55%,#000 100%);
+            color:#f9fafb;
+            display:flex;
+            justify-content:center;
+            align-items:flex-start;
+            padding:30px 20px;
+            min-height:100vh;
+            margin:0;
+        }
+
+        .wrapper { width:100%; max-width:700px; text-align:center; }
+
+        .title-badge {
+            font-size:1.2rem; color:#facc15; font-weight:bold;
+            margin-bottom:10px; text-shadow:0 0 10px rgba(250,204,21,.7);
+        }
+
+        h1 { margin-bottom:16px; font-size:2rem; color:#e5e7eb; }
+
+        #card {
+            width:100%; background:rgba(15,23,42,.92);
+            border-radius:18px; padding:20px;
+            height:var(--card-height);
+            box-shadow:0 18px 40px rgba(0,0,0,.55);
+            border:1px solid rgba(148,163,184,.3);
+            display:flex; justify-content:center; align-items:center;
+        }
+
+        #verse-box {
+            width:100%; max-width:480px; height:100%;
+            display:flex; justify-content:center; align-items:center;
+            text-align:center; font-size:2rem; line-height:1.6;
+            padding:10px; overflow:hidden; word-break:keep-all;
+        }
+
+        #verse-text { width:100%; }
+
+        .amen {
+            font-weight:bold; color:#facc15;
+            text-shadow:0 0 10px rgba(250,204,21,.7);
+        }
+
+        #controls {
+            margin-top:20px;
+            display:flex; flex-wrap:wrap; gap:10px;
+            justify-content:center;
+        }
+
+        .btn {
+            padding:10px 22px;
+            font-size:1.05rem;
+            border-radius:999px;
+            border:none;
+            cursor:pointer;
+            min-width:140px;
+        }
+
+        #next-btn {
+            background:linear-gradient(135deg,#3b82f6,#6366f1);
+            color:white;
+        }
+        #next-btn:disabled { background:#6b7280; }
+
+        #reset-btn {
+            background:transparent;
+            border:1px solid #e5e7eb;
+            color:#e5e7eb;
+        }
+
+        #auto-btn {
+            background:linear-gradient(135deg,#22c55e,#16a34a);
+            color:#f9fafb;
+        }
+        #auto-btn.running {
+            background:#166534;
+        }
+
+        #done-message {
+            margin-top:14px;
+            font-size:1.1rem;
+            color:#4ade80;
+        }
+
+        @media(max-width:480px){
+            #verse-box { font-size:1.7rem; }
+            .btn { min-width:120px; font-size:0.95rem; padding:8px 18px; }
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <div class="title-badge">🎄 성탄절 암송 말씀 🎄</div>
+    <h1>6. 이사야 60장 1절</h1>
+
+    <div id="card">
+        <div id="verse-box">
+            <div id="verse-text"></div>
+        </div>
+    </div>
+
+    <div id="controls">
+        <button id="next-btn" class="btn">다음 단어</button>
+        <button id="reset-btn" class="btn">다시 시작</button>
+        <button id="auto-btn" class="btn">자동 넘김 ▶</button>
+    </div>
+
+    <div id="done-message"></div>
+
+</div>
+
+<audio id="applause-audio" src="applause.mp3"></audio>
+
+<script>
+    const verseWords = ["일어나라", "빛을", "발하라", "이는", "네", "빛이", "이르렀고", "여호와의", "영광이", "네", "위에", "임하였음이니라."];
+
+    const verseText = document.getElementById("verse-text");
+    const nextBtn = document.getElementById("next-btn");
+    const resetBtn = document.getElementById("reset-btn");
+    const autoBtn = document.getElementById("auto-btn");
+    const doneMessage = document.getElementById("done-message");
+    const applause = document.getElementById("applause-audio");
+
+    let index = 0;
+    let autoTimer = null;
+    const AUTO_DELAY = 1000;
+    const amenHtml = ' <span class="amen">아멘!</span>';
+
+    function render() {
+        const totalSteps = verseWords.length + 1;
+
+        if(index === 0){
+            verseText.innerHTML = "";
+            return;
+        }
+
+        if(index <= verseWords.length){
+            verseText.textContent = verseWords.slice(0,index).join(" ");
+        } else if(index === totalSteps){
+            verseText.innerHTML = verseWords.join(" ") + amenHtml;
+        }
+    }
+
+    function next(){
+        const totalSteps = verseWords.length + 1;
+        if(index < totalSteps){
+            index++;
+            render();
+            if(index === totalSteps){
+                finish();
+            }
+        }
+    }
+
+    function finish(){
+        stopAuto();
+        nextBtn.disabled = true;
+        doneMessage.textContent = "👏 잘했어요! 암송을 모두 마쳤습니다.";
+        applause.currentTime = 0;
+        applause.play().catch(()=>{});
+    }
+
+    function reset(){
+        stopAuto();
+        index = 0;
+        nextBtn.disabled = false;
+        doneMessage.textContent = "";
+        render();
+    }
+
+    function startAuto(){
+        if(autoTimer) return;
+        autoTimer = setInterval(()=> next(), AUTO_DELAY);
+        autoBtn.textContent = "자동 넘김 ‖";
+        autoBtn.classList.add("running");
+    }
+
+    function stopAuto(){
+        if(autoTimer){
+            clearInterval(autoTimer);
+            autoTimer = null;
+        }
+        autoBtn.textContent = "자동 넘김 ▶";
+        autoBtn.classList.remove("running");
+    }
+
+    autoBtn.addEventListener("click",()=>{
+        if(autoTimer) stopAuto();
+        else startAuto();
+    });
+
+    nextBtn.addEventListener("click",()=> next());
+    resetBtn.addEventListener("click",()=> reset());
+
+    document.addEventListener("keydown",e=>{
+        if(e.code==="Space"||e.code==="Enter"){
+            e.preventDefault();
+            if(!autoTimer && !nextBtn.disabled) next();
+        }
+    });
+
+    render();
+</script>
+</body>
+</html>
